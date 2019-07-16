@@ -1,0 +1,98 @@
+udrone protocol
+
+Layer 3:
+* IPv4 Multicast (Master -> Drones), Unicast (Drones -> Master)
+* Default Multicast Group: 239.6.6.6
+
+Layer 4:
+* UDP
+* Default Port: 21337
+
+All requests are sent to the multicast group.
+All replies are sent to the unicast source address of the request.
+
+Message Parameters:
+	Identifier:
+	A 16 Byte value (preferrably consisting of printable ASCII characters),
+	identifying a group of nodes. Each node should have a primary unique
+	identifier and one non-unique group identifier.
+	Trailing 0-Bytes of an identifier may be skipped.
+
+	Sequence ID:
+	A channel-unique unsigned 4 Byte number to associate related messages
+	and to synchronize group states. A sequence number of 0 denotes
+	a notice which shouldn't be answered.
+
+	Type:
+	A message format-specific message type identifier.
+
+
+Predefined Groups:
+	!all-default		(Default Group)
+	!all-lost		(Nodes that lost their host, they will move
+				 themselves to !all-default after 60s)
+
+
+Typical Flow:
+	1. A host sends a "who"-message to "!all-defaults" to
+	get to know of any nodes currently in idle state. The nodes
+	will answer with a "hello"-message.
+
+	2. The host checks whether there are suitable nodes
+	for the planned task and generates a random sequence ID
+	which will be used to synchronize the nodes.
+
+	3. The host sends "assign"-messages to any selected
+	nodes with the sequence ID set to the one previously generated.
+	The nodes will answer with a "status"-message. The host repeats
+	steps 1 - 3 until his group has the desired amount of nodes.
+
+	4. The host will regularly send "assign"-messages to his group
+	to renew the assignment. If a node does not receive such a message
+	within 60 seconds or when it receives messages with unknown sequence IDs it
+	must leave the group and enter the "!all-lost" group as it is out-of-sync.
+
+	5. The host may send messages to the group at any time, incrementing the
+	sequence id with each new message. If a node does not answer to a message
+	within .5s the host should resend the message with the old sequence ID.
+	This should be repeated if the node didn't answer within 1s. If the node
+	doesn't answer within another 1s it should be flagged as out-of-sync.
+
+	6. A node may send an "accepted"-message to inform the host that the
+	request was received and is going to be processed. A host should decide
+	on a threshold after which a node is being flagged as hanging.
+
+
+
+
+JSON Message Format:
+* A JSON-encoded datagram
+* First byte is always a '{' char
+
+	Top-level attributes:
+		to: A unique or group identifier of the recipient(s) (String)
+		src: The unique identifier of the sender (String)
+		seq: Sequence ID (Integer)
+		type: Message Type (String)
+		data: Payload (unspecified)
+
+	Predefined Messages Types:
+	"accept": Accept Message
+	"status": Status Reply
+		Payload: struct
+		"errstr": Error String (String, optional)
+		"code": Error Code (Integer, required)
+			0:	Success (no error)
+			1-255:	Linux errno codes
+			< 1000: Reserved
+			>=1000: Private use
+
+	Control Message Types:
+	"!whois": Who is there?
+	"!assign": Assign node to specific group or renew assignment
+		Payload: struct
+		"group": Assigned group (String)
+		"seq": Assigned sequence ID (Integer)
+	"!reset": Reset node
+		Payload: struct
+		"what": ["udrone"|"system"]
