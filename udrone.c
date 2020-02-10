@@ -426,9 +426,9 @@ main(int argc, char **argv)
 	}
 
 	if (argc > 2)
-		strncpy(udrone.board, argv[2], sizeof(udrone.board));
+		strncpy(udrone.board, argv[2], sizeof(udrone.board) - 1);
 	else
-		strncpy(udrone.board, "generic", sizeof(argv[2]));
+		strncpy(udrone.board, "generic", sizeof(udrone.board) - 1);
 
 	udrone.worker_buf = mmap(NULL, UDRONE_MAX_DGRAM, PROT_WRITE | PROT_READ,
 				 MAP_SHARED | MAP_ANONYMOUS, -1, 0);
