@@ -45,6 +45,15 @@ static const struct blobmsg_policy msg_policy[__MSG_MAX] = {
 };
 
 enum {
+        WHOIS_BOARD = 0,
+	__WHOIS_MAX
+};
+
+static const struct blobmsg_policy whois_policy[__WHOIS_MAX] = {
+	[WHOIS_BOARD] = { .name = "whois", .type = BLOBMSG_TYPE_STRING },
+};
+
+enum {
         ASSIGN_GROUP = 0,
 	ASSIGN_SEQ,
 	__ASSIGN_MAX
@@ -226,13 +235,20 @@ static int
 udrone_msg_ctrl(struct blob_attr **msg)
 {
 	char *type = blobmsg_get_string(msg[MSG_TYPE]);
+	struct blob_attr *tb_whois[__WHOIS_MAX];
 	struct blob_attr *tb[__ASSIGN_MAX];
 
 	if (!strcmp(type, "!whois")) {
-		if (msg[MSG_DATA] &&
-		    (blobmsg_type(msg[MSG_DATA]) == BLOBMSG_TYPE_STRING) &&
-		    strcmp(udrone.board, blobmsg_get_string(msg[MSG_DATA])))
+		if (!msg[MSG_DATA] || (blobmsg_type(msg[MSG_DATA]) != BLOBMSG_TYPE_TABLE))
 			return -ENOTSUP;
+
+		blobmsg_parse(whois_policy, __WHOIS_MAX, tb_whois, blobmsg_data(msg[MSG_DATA]), blobmsg_len(msg[MSG_DATA]));
+		if (!tb_whois[WHOIS_BOARD])
+			return -ENOTSUP;
+
+		if (strcmp(udrone.board, blobmsg_get_string(tb_whois[WHOIS_BOARD])))
+			return -ENOTSUP;
+
 		return 0;
 	}
 
