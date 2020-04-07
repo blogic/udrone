@@ -50,7 +50,7 @@ enum {
 };
 
 static const struct blobmsg_policy whois_policy[__WHOIS_MAX] = {
-	[WHOIS_BOARD] = { .name = "whois", .type = BLOBMSG_TYPE_STRING },
+	[WHOIS_BOARD] = { .name = "board", .type = BLOBMSG_TYPE_STRING },
 };
 
 enum {
