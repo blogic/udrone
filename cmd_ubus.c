@@ -70,7 +70,7 @@ handler_ubus(struct blob_attr **msg)
 	if (ubus_lookup_id(&udrone.ubus.ctx, path, &id))
 		return -ENOENT;
 
-	ret = ubus_invoke(&udrone.ubus.ctx, id, method, tb[UBUS_PARAM], ubus_data_handler, NULL, timeout);
+	ret = ubus_invoke(&udrone.ubus.ctx, id, method, blobmsg_data(tb[UBUS_PARAM]), ubus_data_handler, NULL, timeout);
 
 	return ret ? -EINVAL : UDRONE_DATAREPLY;
 }
